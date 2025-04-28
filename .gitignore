@@ -1,0 +1,9 @@
+# Ignorar archivos de credenciales
+service_account.json
+
+# Ignorar carpetas de Python
+__pycache__/
+*.pyc
+
+# Ignorar archivos de entorno
+.env
