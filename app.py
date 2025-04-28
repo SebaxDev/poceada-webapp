@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import random
 import gspread
-import os
 import json
 from oauth2client.service_account import ServiceAccountCredentials
 
@@ -16,20 +15,31 @@ REGISTROS_SHEET = 'Registros'
 # ----------------------------
 # FUNCIONES
 
-# Conexión con Google Sheets usando variable de entorno
+# Conexión con Google Sheets usando st.secrets
 def conectar_google_sheets():
     scope = [
         'https://spreadsheets.google.com/feeds',
         'https://www.googleapis.com/auth/drive'
     ]
-    # Leer credenciales desde variable de entorno
-    service_account_info = json.loads(os.environ["SERVICE_ACCOUNT_JSON"])
+    # Leer credenciales desde secrets
+    service_account_info = {
+        "type": st.secrets.SERVICE_ACCOUNT_JSON.type,
+        "project_id": st.secrets.SERVICE_ACCOUNT_JSON.project_id,
+        "private_key_id": st.secrets.SERVICE_ACCOUNT_JSON.private_key_id,
+        "private_key": st.secrets.SERVICE_ACCOUNT_JSON.private_key,
+        "client_email": st.secrets.SERVICE_ACCOUNT_JSON.client_email,
+        "client_id": st.secrets.SERVICE_ACCOUNT_JSON.client_id,
+        "auth_uri": st.secrets.SERVICE_ACCOUNT_JSON.auth_uri,
+        "token_uri": st.secrets.SERVICE_ACCOUNT_JSON.token_uri,
+        "auth_provider_x509_cert_url": st.secrets.SERVICE_ACCOUNT_JSON.auth_provider_x509_cert_url,
+        "client_x509_cert_url": st.secrets.SERVICE_ACCOUNT_JSON.client_x509_cert_url,
+        "universe_domain": st.secrets.SERVICE_ACCOUNT_JSON.universe_domain,
+    }
     creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, scope)
     client = gspread.authorize(creds)
     return client
 
-# El resto de las funciones siguen igual:
-
+# --- Tu código original sigue igual desde aquí ---
 def cargar_historial(client):
     sheet = client.open(SPREADSHEET_NAME).worksheet(HISTORIAL_SHEET)
     data = sheet.get_all_records()
