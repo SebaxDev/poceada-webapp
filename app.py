@@ -173,20 +173,7 @@ def generar_boletos(conteo, estrategia='balanceada', cantidad_boletos=6):
 # STREAMLIT APP
 
 def main():
-    # Centrar la imagen y cambiar el tamaño
-    st.markdown(
-    "<style>
-    .center-image {
-        display: flex;
-        justify-content: center;
-    }
-    </style>
-    <div class="center-image">
-        <img src="https://raw.githubusercontent.com/SebaxDev/poceada-webapp/main/gengar.png" width="150px">
-    </div>
-    ",
-    unsafe_allow_html=True)
-
+    st.image("https://raw.githubusercontent.com/SebaxDev/poceada-webapp/main/gengar.png", width=150)
     st.title("🎯 Generador Inteligente de Boletos")
     st.markdown("<hr>", unsafe_allow_html=True)
     st.markdown("Bienvenido a tu herramienta para jugar mejor en la Poceada! 🎲✨")
