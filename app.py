@@ -21,12 +21,14 @@ def conectar_google_sheets():
         'https://spreadsheets.google.com/feeds',
         'https://www.googleapis.com/auth/drive'
     ]
-    # Leer credenciales desde secrets
+    # Leer credenciales desde secrets y corregir los saltos de línea
+    private_key = st.secrets.SERVICE_ACCOUNT_JSON.private_key.replace("\\n", "\n")
+
     service_account_info = {
         "type": st.secrets.SERVICE_ACCOUNT_JSON.type,
         "project_id": st.secrets.SERVICE_ACCOUNT_JSON.project_id,
         "private_key_id": st.secrets.SERVICE_ACCOUNT_JSON.private_key_id,
-        "private_key": st.secrets.SERVICE_ACCOUNT_JSON.private_key,
+        "private_key": private_key,
         "client_email": st.secrets.SERVICE_ACCOUNT_JSON.client_email,
         "client_id": st.secrets.SERVICE_ACCOUNT_JSON.client_id,
         "auth_uri": st.secrets.SERVICE_ACCOUNT_JSON.auth_uri,
@@ -39,7 +41,7 @@ def conectar_google_sheets():
     client = gspread.authorize(creds)
     return client
 
-# --- Tu código original sigue igual desde aquí ---
+# Funciones de manejo de datos
 def cargar_historial(client):
     sheet = client.open(SPREADSHEET_NAME).worksheet(HISTORIAL_SHEET)
     data = sheet.get_all_records()
@@ -96,11 +98,14 @@ def generar_boletos(conteo, estrategia='balanceada', cantidad_boletos=6):
 
     for _ in range(cantidad_boletos):
         boleto = []
+
         if estrategia == 'balanceada':
             boleto.extend(random.sample(calientes, 3))
             boleto.extend(random.sample(frios, 2))
+
         elif estrategia == 'calientes':
             boleto.extend(random.sample(calientes, 5))
+
         elif estrategia == 'consecutivos':
             base = random.choice(numeros[:-1])
             boleto.append(base)
@@ -109,12 +114,14 @@ def generar_boletos(conteo, estrategia='balanceada', cantidad_boletos=6):
                 n = random.choice(numeros)
                 if n not in boleto:
                     boleto.append(n)
+
         elif estrategia == 'grupos':
             boleto.append(random.choice(range(0, 20)))
             boleto.append(random.choice(range(20, 40)))
             boleto.append(random.choice(range(40, 60)))
             boleto.append(random.choice(range(60, 80)))
             boleto.append(random.choice(range(80, 100)))
+
         elif estrategia == 'inteligente':
             seleccionados = []
             seleccionados.extend(random.sample(calientes, 3))
@@ -146,6 +153,7 @@ def generar_boletos(conteo, estrategia='balanceada', cantidad_boletos=6):
                 seleccionados[random.randint(0, 4)] = reemplazo
 
             boleto = sorted(seleccionados)
+
         else:
             boleto = random.sample(numeros, 5)
 
