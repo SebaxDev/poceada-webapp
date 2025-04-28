@@ -2,12 +2,13 @@ import streamlit as st
 import pandas as pd
 import random
 import gspread
+import os
+import json
 from oauth2client.service_account import ServiceAccountCredentials
 
 # ----------------------------
 # CONFIGURACIONES
 
-SERVICE_ACCOUNT_FILE = 'service_account.json'
 SPREADSHEET_NAME = 'Poceada Chat'
 HISTORIAL_SHEET = 'Historial'
 REGISTROS_SHEET = 'Registros'
@@ -15,26 +16,28 @@ REGISTROS_SHEET = 'Registros'
 # ----------------------------
 # FUNCIONES
 
-# Conexión con Google Sheets
+# Conexión con Google Sheets usando variable de entorno
 def conectar_google_sheets():
     scope = [
         'https://spreadsheets.google.com/feeds',
         'https://www.googleapis.com/auth/drive'
     ]
-    creds = ServiceAccountCredentials.from_json_keyfile_name(SERVICE_ACCOUNT_FILE, scope)
+    # Leer credenciales desde variable de entorno
+    service_account_info = json.loads(os.environ["SERVICE_ACCOUNT_JSON"])
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, scope)
     client = gspread.authorize(creds)
     return client
 
-# Cargar historial de sorteos
+# El resto de las funciones siguen igual:
+
 def cargar_historial(client):
     sheet = client.open(SPREADSHEET_NAME).worksheet(HISTORIAL_SHEET)
     data = sheet.get_all_records()
     df = pd.DataFrame(data)
-    numeros = df.iloc[:, 2:12].values.flatten()  # Columnas C:L
+    numeros = df.iloc[:, 2:12].values.flatten()
     numeros = [int(n) for n in numeros if n != '']
     return numeros
 
-# Cargar historial por sorteos recientes
 def seleccionar_historial(historial, sorteos):
     numeros_por_sorteo = 10
     if sorteos == "Todos":
@@ -43,7 +46,6 @@ def seleccionar_historial(historial, sorteos):
         cantidad_numeros = int(sorteos) * numeros_por_sorteo
         return historial[-cantidad_numeros:]
 
-# Guardar boletos
 def guardar_boletos(client, boletos, fecha_sorteo):
     sheet = client.open(SPREADSHEET_NAME).worksheet(REGISTROS_SHEET)
     rows = []
@@ -52,14 +54,12 @@ def guardar_boletos(client, boletos, fecha_sorteo):
         rows.append(row)
     sheet.append_rows(rows, value_input_option='USER_ENTERED')
 
-# Calcular frecuencia de números
 def frecuencia_numeros(lista):
     conteo = {}
     for n in lista:
         conteo[n] = conteo.get(n, 0) + 1
     return conteo
 
-# Calcular números más atrasados
 def numeros_atrasados(historial):
     numeros = set(range(0, 100))
     historial_reversed = historial[::-1]
@@ -67,7 +67,7 @@ def numeros_atrasados(historial):
 
     for idx, n in enumerate(historial_reversed):
         if n not in ultimas_apariciones:
-            ultimas_apariciones[n] = idx // 10  # Cada 10 números = 1 sorteo
+            ultimas_apariciones[n] = idx // 10
 
     faltantes = numeros - set(ultimas_apariciones.keys())
     for f in faltantes:
@@ -76,7 +76,6 @@ def numeros_atrasados(historial):
     atrasados = sorted(ultimas_apariciones.items(), key=lambda x: x[1], reverse=True)
     return atrasados[:10]
 
-# Generar boletos
 def generar_boletos(conteo, estrategia='balanceada', cantidad_boletos=6):
     numeros = list(range(0, 100))
     conteo_ordenado = sorted(conteo.items(), key=lambda x: x[1], reverse=True)
@@ -87,14 +86,11 @@ def generar_boletos(conteo, estrategia='balanceada', cantidad_boletos=6):
 
     for _ in range(cantidad_boletos):
         boleto = []
-
         if estrategia == 'balanceada':
             boleto.extend(random.sample(calientes, 3))
             boleto.extend(random.sample(frios, 2))
-
         elif estrategia == 'calientes':
             boleto.extend(random.sample(calientes, 5))
-
         elif estrategia == 'consecutivos':
             base = random.choice(numeros[:-1])
             boleto.append(base)
@@ -103,14 +99,12 @@ def generar_boletos(conteo, estrategia='balanceada', cantidad_boletos=6):
                 n = random.choice(numeros)
                 if n not in boleto:
                     boleto.append(n)
-
         elif estrategia == 'grupos':
             boleto.append(random.choice(range(0, 20)))
             boleto.append(random.choice(range(20, 40)))
             boleto.append(random.choice(range(40, 60)))
             boleto.append(random.choice(range(60, 80)))
             boleto.append(random.choice(range(80, 100)))
-
         elif estrategia == 'inteligente':
             seleccionados = []
             seleccionados.extend(random.sample(calientes, 3))
@@ -142,7 +136,6 @@ def generar_boletos(conteo, estrategia='balanceada', cantidad_boletos=6):
                 seleccionados[random.randint(0, 4)] = reemplazo
 
             boleto = sorted(seleccionados)
-
         else:
             boleto = random.sample(numeros, 5)
 
@@ -159,7 +152,6 @@ def main():
 
     st.title("🎲 Generador de Boletos - Poceada")
 
-    # Inicializamos variable de sesión para login
     if "logueado" not in st.session_state:
         st.session_state["logueado"] = False
 
