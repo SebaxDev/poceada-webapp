@@ -6,22 +6,24 @@ from google.oauth2 import service_account
 
 # ----------------------------
 # CONFIGURACIONES
-
 SPREADSHEET_NAME = 'Poceada Chat'
 HISTORIAL_SHEET = 'Historial'
 REGISTROS_SHEET = 'Registros'
 
 # ----------------------------
+# FORZAR IDIOMA ESPAÑOL
+st.markdown("""
+    <script>
+    document.getElementsByTagName('html')[0].setAttribute('lang','es')
+    </script>
+""", unsafe_allow_html=True)
+
+# ----------------------------
 # FUNCIONES
 
-# Conexión con Google Sheets usando st.secrets
 def conectar_google_sheets():
-    scope = [
-        'https://spreadsheets.google.com/feeds',
-        'https://www.googleapis.com/auth/drive'
-    ]
+    scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
     private_key = st.secrets.SERVICE_ACCOUNT_JSON.private_key.replace("\\n", "\n")
-
     service_account_info = {
         "type": st.secrets.SERVICE_ACCOUNT_JSON.type,
         "project_id": st.secrets.SERVICE_ACCOUNT_JSON.project_id,
@@ -73,15 +75,12 @@ def numeros_atrasados(historial):
     numeros = set(range(0, 100))
     historial_reversed = historial[::-1]
     ultimas_apariciones = {}
-
     for idx, n in enumerate(historial_reversed):
         if n not in ultimas_apariciones:
             ultimas_apariciones[n] = idx // 10
-
     faltantes = numeros - set(ultimas_apariciones.keys())
     for f in faltantes:
         ultimas_apariciones[f] = len(historial) // 10
-
     atrasados = sorted(ultimas_apariciones.items(), key=lambda x: x[1], reverse=True)
     return atrasados[:10]
 
@@ -92,17 +91,13 @@ def generar_boletos(conteo, estrategia='balanceada', cantidad_boletos=6):
     frios = [n for n, _ in conteo_ordenado[-20:]]
 
     boletos = []
-
     for _ in range(cantidad_boletos):
         boleto = []
-
         if estrategia == 'balanceada':
             boleto.extend(random.sample(calientes, 3))
             boleto.extend(random.sample(frios, 2))
-
         elif estrategia == 'calientes':
             boleto.extend(random.sample(calientes, 5))
-
         elif estrategia == 'consecutivos':
             base = random.choice(numeros[:-1])
             boleto.append(base)
@@ -111,35 +106,24 @@ def generar_boletos(conteo, estrategia='balanceada', cantidad_boletos=6):
                 n = random.choice(numeros)
                 if n not in boleto:
                     boleto.append(n)
-
         elif estrategia == 'grupos':
             boleto.append(random.choice(range(0, 20)))
             boleto.append(random.choice(range(20, 40)))
             boleto.append(random.choice(range(40, 60)))
             boleto.append(random.choice(range(60, 80)))
             boleto.append(random.choice(range(80, 100)))
-
         elif estrategia == 'inteligente':
             seleccionados = []
             seleccionados.extend(random.sample(calientes, 3))
             seleccionados.append(random.choice(frios))
-
-            rangos = [
-                range(0, 20),
-                range(20, 40),
-                range(40, 60),
-                range(60, 80),
-                range(80, 100)
-            ]
+            rangos = [range(0, 20), range(20, 40), range(40, 60), range(60, 80), range(80, 100)]
             usado = set(seleccionados)
-
             while len(seleccionados) < 5:
                 rango = random.choice(rangos)
                 n = random.choice(list(rango))
                 if n not in usado:
                     seleccionados.append(n)
                     usado.add(n)
-
             pares = [n for n in seleccionados if n % 2 == 0]
             if not (2 <= len(pares) <= 3):
                 candidatos = [n for n in numeros if n not in usado]
@@ -148,12 +132,9 @@ def generar_boletos(conteo, estrategia='balanceada', cantidad_boletos=6):
                 else:
                     reemplazo = random.choice([n for n in candidatos if n % 2 == 0])
                 seleccionados[random.randint(0, 4)] = reemplazo
-
             boleto = sorted(seleccionados)
-
         else:
             boleto = random.sample(numeros, 5)
-
         boleto = sorted(boleto)
         boletos.append(boleto)
 
@@ -163,65 +144,73 @@ def generar_boletos(conteo, estrategia='balanceada', cantidad_boletos=6):
 # STREAMLIT APP
 
 def main():
-    st.set_page_config(page_title="🎲 Generador de Poceada", page_icon="🎯", layout="centered")
+    st.set_page_config(page_title="🌹 Generador Poceada", page_icon="🌹", layout="centered")
 
-    # Encabezado visual
-    st.image("https://upload.wikimedia.org/wikipedia/commons/7/72/Lottery_ticket_icon.png", width=100)
-    st.title("🎯 Generador de Boletos - Poceada")
-    st.markdown("¡Bienvenido a tu generador inteligente de boletos para la Poceada! 🎲✨")
+    st.image("https://i.imgur.com/lKW2fKv.png", width=300)
+    st.title("\ud83d\udd39 Generador Inteligente de Boletos")
+    st.markdown("<hr>", unsafe_allow_html=True)
+    st.markdown("Bienvenido a tu herramienta para jugar mejor en la Poceada! 🌟")
 
     if "logueado" not in st.session_state:
-        st.session_state["logueado"] = False
+        st.session_state.logueado = False
+    if "boletos" not in st.session_state:
+        st.session_state.boletos = None
 
-    if not st.session_state["logueado"]:
+    if not st.session_state.logueado:
         with st.form("login"):
             st.subheader("🔐 Iniciar Sesión")
             username = st.text_input("Usuario")
             password = st.text_input("Contraseña", type="password")
             login_button = st.form_submit_button("Ingresar")
-
         if login_button:
             if username == "SebaxDev" and password == "SebaxDev":
-                st.session_state["logueado"] = True
-                st.success("¡Bienvenido SebaxDev! 🎯")
+                st.session_state.logueado = True
+                st.success("Bienvenido SebaxDev! \ud83c\udf39")
             else:
-                st.error("Usuario o contraseña incorrectos ❌")
+                st.error("Usuario o contraseña incorrectos.")
 
-    if st.session_state["logueado"]:
+    if st.session_state.logueado:
         client = conectar_google_sheets()
         historial_total = cargar_historial(client)
 
-        st.subheader("📈 ¿Qué sorteos querés analizar?")
+        st.subheader("\ud83d\udcca Elegí sorteos a analizar")
         opciones_sorteos = ["100", "150", "200", "300", "Todos"]
-        seleccion_sorteos = st.selectbox("Seleccioná cantidad de sorteos a analizar", opciones_sorteos)
+        seleccion_sorteos = st.selectbox("Cantidad de sorteos", opciones_sorteos)
 
         historial = seleccionar_historial(historial_total, seleccion_sorteos)
 
         conteo = frecuencia_numeros(historial)
         atrasados = numeros_atrasados(historial)
 
-        st.subheader("🧊 Top 10 números más fríos:")
-        df_atrasados = pd.DataFrame(atrasados, columns=["Número", "Sorteos sin salir"])
-        st.dataframe(df_atrasados, use_container_width=True)
+        st.subheader("\ud83d\udd10 Top 10 números fríos")
+        st.dataframe(pd.DataFrame(atrasados, columns=["Número", "Sorteos sin salir"]))
 
-        st.subheader("🎯 Elegí tu estrategia")
+        st.subheader("\ud83c\udf08 Elegí estrategia de generación")
         estrategia = st.selectbox("Estrategia", ["balanceada", "calientes", "consecutivos", "grupos", "inteligente"])
-        cantidad_boletos = st.slider("¿Cuántos boletos querés generar?", min_value=1, max_value=20, value=6)
+        cantidad_boletos = st.slider("Cantidad de boletos", 1, 20, 6)
 
-        if st.button("🎟️ Generar Boletos"):
-            with st.spinner("Generando tus boletos... 🎰"):
-                boletos = generar_boletos(conteo, estrategia, cantidad_boletos)
+        if st.button("\ud83c\udfab Generar Boletos"):
+            with st.spinner("Generando boletos..."):
+                st.session_state.boletos = generar_boletos(conteo, estrategia, cantidad_boletos)
+                st.success("Boletos generados!")
 
-                st.success("¡Boletos generados exitosamente! 🎉")
-                df_boletos = pd.DataFrame(boletos, columns=["N°1", "N°2", "N°3", "N°4", "N°5"])
-                st.dataframe(df_boletos, use_container_width=True)
+        if st.session_state.boletos:
+            st.subheader("\ud83d\udcbc Tus boletos generados")
+            st.dataframe(pd.DataFrame(st.session_state.boletos, columns=["N°1", "N°2", "N°3", "N°4", "N°5"]))
 
-                guardar = st.radio("¿Querés guardar los boletos en 'Registros'?", ["Sí", "No"])
-                if guardar == "Sí":
-                    fecha_sorteo = st.date_input("Seleccioná la fecha del sorteo")
-                    if st.button("💾 Guardar Boletos"):
-                        guardar_boletos(client, boletos, fecha_sorteo.strftime("%d/%m/%Y"))
-                        st.success("🎯 Boletos guardados en la hoja 'Registros' exitosamente!")
+            st.markdown("<hr>", unsafe_allow_html=True)
+
+            guardar = st.radio("¿Querés guardar estos boletos?", ["No", "Sí"])
+            if guardar == "Sí":
+                fecha_sorteo = st.date_input("Fecha de sorteo")
+                if st.button("\ud83d\udcc2 Guardar Boletos"):
+                    guardar_boletos(client, st.session_state.boletos, fecha_sorteo.strftime("%d/%m/%Y"))
+                    st.success("Boletos guardados exitosamente en Google Sheets!")
+
+    st.markdown("""
+    <hr>
+    <center><sub>Creado con ❤️ por <b>SebaxDev</b></sub></center>
+    """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
